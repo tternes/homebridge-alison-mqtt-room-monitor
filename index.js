@@ -60,13 +60,20 @@ AlisonRoomMonitor.prototype.onMqttReconnected = function() {
 
 
 AlisonRoomMonitor.prototype.onMqttMessage = function (topic, message) {
-  var status = JSON.parse(message)
-  if(status.c != null) {
-    this.updateCurrentTemperature(status.c)
+  try {
+    var status = JSON.parse(message)
+    if(status.c != null) {
+      this.updateCurrentTemperature(status.c)
+    }
+    if(status.h != null) {
+      this.updateCurrentHumidity(status.h)
+    }
   }
-  if(status.h != null) {
-    this.updateCurrentHumidity(status.h)
+  catch(e) {
+    console.log(`Failed to parse message: ${message}`)
+    console.log(e)
   }
+  
 }
 
 
