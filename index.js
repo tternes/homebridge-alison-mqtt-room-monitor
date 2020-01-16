@@ -14,12 +14,17 @@ function AlisonRoomMonitor(log, config) {
   var boardId = config.boardId || 'unknown'
   var manufacturer = config.manufacturer || 'Evening Indie'
   var model = config.model || 'Alison Room Monitor'
+  var topic = config.topic || `/alison/${boardId}/status`
   var firmwareVersion = pkginfo.version || '0.0.0'
+
+  // register defaults
+  config.temperature_enabled = config.temperature_enabled || true
+  config.humidity_enabled = config.humidity_enabled || false
   
   this.log = log
   this.config = config
   this.name = config.name
-  this.statusTopic = `/alison/esp8266/${boardId}/status`
+  this.statusTopic = topic
   
   this.currentTemperature = 0.0
   this.currentHumidity = 0.0
@@ -62,18 +67,17 @@ AlisonRoomMonitor.prototype.onMqttReconnected = function() {
 AlisonRoomMonitor.prototype.onMqttMessage = function (topic, message) {
   try {
     var status = JSON.parse(message)
-    if(status.c != null) {
-      this.updateCurrentTemperature(status.c)
+    if(status.env.c != null) {
+      this.updateCurrentTemperature(status.env.c)
     }
-    if(status.h != null) {
-      this.updateCurrentHumidity(status.h)
+    if(status.env.h != null) {
+      this.updateCurrentHumidity(status.env.h)
     }
   }
   catch(e) {
     console.log(`Failed to parse message: ${message}`)
     console.log(e)
   }
-  
 }
 
 
@@ -108,9 +112,18 @@ AlisonRoomMonitor.prototype.updateCurrentHumidity = function(humidity) {
 
 
 AlisonRoomMonitor.prototype.getServices = function() {
-  return [
-    this.temperatureService,
-    this.humidityService,
-    this.infoService
-  ]
+  const config = this.config
+
+  var services = Array()
+  services.push(this.infoService)
+  
+  if(config.temperature_enabled) {
+    services.push(this.temperatureService)
+  }
+
+  if(config.humidity_enabled) {
+    services.push(this.humidityService)
+  }
+
+  return services
 }
