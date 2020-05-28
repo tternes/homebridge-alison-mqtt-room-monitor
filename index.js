@@ -14,7 +14,7 @@ function AlisonRoomMonitor(log, config) {
   const boardId = config.boardId || 'unknown'
   const manufacturer = config.manufacturer || 'Evening Indie'
   const model = config.model || 'Alison Room Monitor'
-  const statusTopic = config.topic || `/alison/${boardId}/status`
+  const statusTopic = config.topic || `/alison/${boardId}/room/status`
   const presenceTopic = config.topic || `/alison/${boardId}/presence`
   const firmwareVersion = pkginfo.version || '0.0.0'
 
@@ -102,8 +102,8 @@ AlisonRoomMonitor.prototype.updateCurrentTemperature = function(degrees) {
   if(this.currentTemperature != degrees) {
     this.log(`updating current temperature ${this.currentTemperature} => ${degrees}`)
     this.currentTemperature = degrees
-    var c = this.temperatureService.getCharacteristic(Characteristic.CurrentTemperature)
-    c.getValue()    
+    
+    this.temperatureService.getCharacteristic(Characteristic.CurrentTemperature).getValue()
   }
 }
 
@@ -117,8 +117,8 @@ AlisonRoomMonitor.prototype.updateCurrentHumidity = function(humidity) {
   if(this.currentHumidity != humidity) {
     this.log(`updating current humidity ${this.currentHumidity} => ${humidity}`)
     this.currentHumidity = humidity
-    var c = this.humidityService.getCharacteristic(Characteristic.CurrentRelativeHumidity)
-    c.getValue()    
+    
+    this.humidityService.getCharacteristic(Characteristic.CurrentRelativeHumidity).getValue()
   }
 }
 
