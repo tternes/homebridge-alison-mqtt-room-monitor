@@ -11,11 +11,12 @@ module.exports = function(homebridge) {
 
 
 function AlisonRoomMonitor(log, config) {
-  var boardId = config.boardId || 'unknown'
-  var manufacturer = config.manufacturer || 'Evening Indie'
-  var model = config.model || 'Alison Room Monitor'
-  var topic = config.topic || `/alison/${boardId}/status`
-  var firmwareVersion = pkginfo.version || '0.0.0'
+  const boardId = config.boardId || 'unknown'
+  const manufacturer = config.manufacturer || 'Evening Indie'
+  const model = config.model || 'Alison Room Monitor'
+  const statusTopic = config.topic || `/alison/${boardId}/status`
+  const presenceTopic = config.topic || `/alison/${boardId}/presence`
+  const firmwareVersion = pkginfo.version || '0.0.0'
 
   // register defaults
   config.temperature_enabled = config.temperature_enabled || true
@@ -24,7 +25,8 @@ function AlisonRoomMonitor(log, config) {
   this.log = log
   this.config = config
   this.name = config.name
-  this.statusTopic = topic
+  this.statusTopic = statusTopic
+  this.presenceTopic = presenceTopic
   
   this.currentTemperature = 0.0
   this.currentHumidity = 0.0
@@ -56,6 +58,7 @@ function AlisonRoomMonitor(log, config) {
 AlisonRoomMonitor.prototype.onMqttConnected = function () {
   this.log(`mqtt client connected, subscribing to ${this.statusTopic}`)
   this.mqclient.subscribe(this.statusTopic)
+  this.mqclient.subscribe(this.presenceTopic)
 }
 
 
@@ -65,19 +68,28 @@ AlisonRoomMonitor.prototype.onMqttReconnected = function() {
 
 
 AlisonRoomMonitor.prototype.onMqttMessage = function (topic, message) {
-  try {
-    var status = JSON.parse(message)
-    if(status.env.c != null) {
-      this.updateCurrentTemperature(status.env.c)
-    }
-    if(status.env.h != null) {
-      this.updateCurrentHumidity(status.env.h)
-    }
+  if(topic == this.presenceTopic)
+  {
+    const presence = message.toString()
+    this.log('sensor connection:', presence)
   }
-  catch(e) {
-    console.log(`Failed to parse message: ${message}`)
-    console.log(e)
-  }
+
+  if(topic == this.statusTopic)
+  {
+    try {
+      var status = JSON.parse(message)
+      if(status.env.c != null) {
+        this.updateCurrentTemperature(status.env.c)
+      }
+      if(status.env.h != null) {
+        this.updateCurrentHumidity(status.env.h)
+      }
+    }
+    catch(e) {
+      console.log(`Failed to parse message: ${message}`)
+      console.log(e)
+    }
+  }  
 }
 
 
